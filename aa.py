@@ -348,21 +348,29 @@ plt.savefig(school_chart_path)
 # 插入 Word 文档
 doc.add_picture(school_chart_path, width=Inches(5.5))
 
+# 筛选学生数据
+student_df = df[df["身份"].str.contains("学生", na=False)]
+
 # 高发区域统计
-doc.add_paragraph("高发区域：")
-area_counts = df["案发地区划"].value_counts().head(5)
-area_percents = round(area_counts / total_cases * 100, 1)
-for area, count in area_counts.items():
-    percent = area_percents[area]
-    doc.add_paragraph(f"{area}{count}起、占比{percent}%，")
+area_counts = student_df["案发地区划"].value_counts()
+area_total = area_counts.sum()
+area_result = [
+    f"{area}{count}起，占比{count / area_total:.1%}"
+    for area, count in area_counts.head(5).items()
+]
 
 # 高发派出所统计
-doc.add_paragraph("高发派出所：")
-station_counts = df["所属派出所"].fillna("其他").value_counts().head(5)
-station_percents = round(station_counts / total_cases * 100, 1)
-for station, count in station_counts.items():
-    percent = station_percents[station]
-    doc.add_paragraph(f"{station}{count}起、占比{percent}%，")
+police_counts = student_df["所属派出所"].value_counts()
+police_total = police_counts.sum()
+police_result = [
+    f"{station}{count}起，占比{count / police_total:.1%}"
+    for station, count in police_counts.head(5).items()
+]
+
+# 插入到 Word 报告中
+doc.add_paragraph("（四）学生群体高发区域与高发派出所：")
+doc.add_paragraph("高发区域：\n" + "，\n".join(area_result) + "。")
+doc.add_paragraph("高发派出所：\n" + "，\n".join(police_result) + "。")
 
 # 学生警情高发派出所柱状图
 student_station_counts = student_df["所属派出所"].fillna("其他").value_counts().head(10)
